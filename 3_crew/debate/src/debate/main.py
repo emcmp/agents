@@ -1,3 +1,6 @@
+
+# uv run crewai run
+
 #!/usr/bin/env python
 import sys
 import warnings
@@ -18,7 +21,8 @@ def run():
     Run the crew.
     """
     inputs = {
-        'motion': 'There needs to be strict laws to regulate LLMs',
+        #'motion': 'There needs to be strict laws to regulate LLMs',
+        'motion': 'Le Québec devrait faire se séparer du Canada et proclamer son indépendance.',
     }
     
     try:
