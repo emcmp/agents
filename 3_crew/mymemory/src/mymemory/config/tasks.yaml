@@ -1,0 +1,21 @@
+research_task:
+  description: >
+    Research the latest developments in {topic}. Capture at least 5 bullet points
+    of key facts (names, dates, numbers, releases, repos), and add a short note
+    about why each item matters. Be brief but specific.
+  agent: researcher
+  expected_output: >
+    A compact list of 5–8 bullet points with one-line significance notes.
+
+reporting_task:
+  description: >
+    Use the research notes and what you remember to produce a clear report.
+    First, write a short executive summary (3–5 sentences).
+    Then add a section "Details I remembered" listing 3+ items you recall from
+    earlier conversation or the research step (this tests short memory).
+    Finish with a "Next Questions" section.
+  agent: reporting_analyst
+  expected_output: >
+    1) Executive summary paragraph.
+    2) "Details I remembered" list (3+ items).
+    3) "Next Questions" list (3–5 items).

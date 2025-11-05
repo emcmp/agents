@@ -12,6 +12,24 @@ First, if you haven't already, install uv:
 pip install uv
 ```
 
+### Windows Users - Fix for chroma-hnswlib Build Error
+
+If you encounter a "Microsoft Visual C++ 14.0 or greater is required" error when installing on Windows, run this PowerShell script first:
+
+```powershell
+.\install_windows.ps1
+```
+
+Alternatively, manually install the pre-built wheel:
+
+```powershell
+python -m pip install --only-binary :all: chroma-hnswlib==0.7.6
+```
+
+This pre-installs the Windows wheel to avoid compilation errors. After this, proceed with the normal installation.
+
+### Installing Dependencies
+
 Next, navigate to your project directory and install the dependencies:
 
 (Optional) Lock the dependencies and install them by using the CLI command:
