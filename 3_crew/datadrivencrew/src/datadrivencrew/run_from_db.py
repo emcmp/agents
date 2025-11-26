@@ -24,11 +24,26 @@ def _connect() -> sqlite3.Connection:
 
 def _extract_text(result) -> str:
     """
-    Essaie d'extraire le texte du résultat CrewAI, peu importe la version.
+    Retourne le texte lisible du résultat CrewAI.
+    On privilégie str(result), qui correspond au "final answer".
     """
-    if hasattr(result, "raw"):
-        return result.raw
-    return str(result)
+    try:
+        text = str(result)
+        if text and not text.isspace():
+            return text
+    except Exception:
+        pass
+
+    # Fallback: on sérialise raw en JSON si dispo
+    raw = getattr(result, "raw", None)
+    if raw is not None:
+        try:
+            return json.dumps(raw, ensure_ascii=False, indent=2)
+        except Exception:
+            return repr(raw)
+
+    return repr(result)
+
 
 import json
 import base64

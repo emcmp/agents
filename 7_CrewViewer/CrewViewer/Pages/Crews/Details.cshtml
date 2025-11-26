@@ -77,12 +77,9 @@
                     <div class="badge bg-warning text-dark">
                         <i class="bi bi-list-check"></i>@Model.crew.crew_tasks.Count task(s)
                     </div>
-
-                    <div class="badge bg-warning text-dark">
-                        <a asp-page="./ExecutionList"
-                           asp-route-crewId="@Model.crew.id"
-                           class="badge bg-dark text-light text-decoration-none"
-                           style="cursor:pointer;">
+                    <br />
+                    <div class="badge bg-dark text-light text-decoration-none">
+                        <a asp-page="./ExecutionList" asp-route-crewId="@Model.crew.id" style="cursor:pointer;">
                             <i class="bi bi-clock-history"></i> @Model.crew.exec_count
                         </a>
                     </div>

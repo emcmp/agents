@@ -1,0 +1,1 @@
+Current Task: Lit le user_input et retourne une réponse courte. This is the expected criteria for your final answer: Une courte réponse basée uniquement sur user_input. you MUST return the actual complete content as the final answer, not a summary.

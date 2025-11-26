@@ -6,6 +6,12 @@ from typing import Dict, List
 
 from crewai import Crew, Agent, Task
 
+import sys
+# Ajoute le dossier 'tools' au sys.path pour permettre l'import de db_tools
+sys.path.append(str(Path(__file__).resolve().parent / "tools"))
+
+#from db_tools import InsertCrewConfigTool
+
 # DB = <racine du projet>/data/crews.db
 DB_PATH = Path(__file__).resolve().parents[2] / "data" / "crews.db"
 
@@ -45,6 +51,8 @@ def load_crew(crew_code: str) -> Crew:
         raise ValueError(f"Crew '{crew_code}' not found or inactive in DB.")
 
     crew_id = crew_row["id"]
+    
+    #tools = [InsertCrewConfigTool()]
 
     # 2) Récupérer les agents du crew
     cur.execute(
@@ -126,6 +134,7 @@ def load_crew(crew_code: str) -> Crew:
         agents=list(agents_by_id.values()),
         tasks=tasks,
         process=process,
+        #tools=tools,
     )
 
     conn.close()
