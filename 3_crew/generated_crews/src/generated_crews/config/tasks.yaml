@@ -1,0 +1,16 @@
+Develop_Web_Application:
+  description: "Créer une application web en fonction des exigences définies."
+  expected_output: "Code source de l'application web, documentation, et déploiement sur une plateforme."
+  agent: "Task_Creator"
+Create_REST_API:
+  description: "Développer une API RESTful pour l'interaction avec l'application."
+  expected_output: "Code de l'API, spécifications Swagger, et documentation d'utilisation."
+  agent: "Task_Creator"
+Automate_Unit_Tests:
+  description: "Écrire des tests unitaires pour les modules développés."
+  expected_output: "Suite de tests unitaires, rapport de couverture, et intégration CI/CD."
+  agent: "Task_Creator"
+Setup_Database:
+  description: "Mettre en place la base de données nécessaire pour l'application."
+  expected_output: "Schéma de base de données, script de migration, et documentation de connexion."
+  agent: "Task_Creator"

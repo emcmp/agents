@@ -1,0 +1,289 @@
+﻿@page
+@model CrewViewer.Pages.Crews.DetailsModel
+
+@{
+    ViewData["Title"] = "Blueprint du crew";
+
+    var pipelineTasks = Model.crew.crew_tasks
+        .OrderBy(t => t.sort_order)
+        .ToList();
+}
+
+<div class="container py-4">
+    <a asp-page="./Index" class="btn btn-link px-0 mb-3">
+        ← Retour à la liste des crews
+    </a>
+
+    <!-- En-tête du crew -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-diagram-3-fill"></i> Blueprint du crew
+                    </h1>
+
+                    <h2 class="h4 text-primary mb-3">
+                        <i class="bi bi-robot"></i> @Model.crew.name
+                        <span class="text-muted">(@Model.crew.code)</span>
+                    </h2>
+                    <form method="post" asp-page-handler="Run" asp-route-id="@Model.crew.id" class="mb-3">
+                        <div class="input-group">
+                            <input asp-for="RunUserInput"
+                                   class="form-control"
+                                   placeholder="user_input pour ce crew (facultatif)" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-play-fill"></i> Exécuter ce crew
+                            </button>
+                        </div>
+                    </form>
+
+
+                    <div class="small text-muted">
+                        <div>
+                            <strong>Orchestration :</strong>
+                            <span class="badge bg-info">
+                                <i class="bi bi-repeat"></i> @Model.crew.orchestration
+                            </span>
+
+                        </div>
+                        <div>
+                            <strong>Actif :</strong>
+                            @if (Model.crew.is_active)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check2-circle"></i> Oui
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-lg"></i> Non
+                                </span>
+                            }
+
+                        </div>
+                        <div>
+                            <strong>Créé le :</strong> @Model.crew.created_at
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <div class="badge bg-primary mb-1">
+                        <i class="bi bi-people"></i> @Model.crew.crew_agents.Count agent(s)
+                    </div>
+                    <br />
+                    <div class="badge bg-warning text-dark">
+                        <i class="bi bi-list-check"></i>@Model.crew.crew_tasks.Count task(s)
+                    </div>
+
+                    <div class="badge bg-warning text-dark">
+                        <a asp-page="./ExecutionList"
+                           asp-route-crewId="@Model.crew.id"
+                           class="badge bg-dark text-light text-decoration-none"
+                           style="cursor:pointer;">
+                            <i class="bi bi-clock-history"></i> @Model.crew.exec_count
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bandeau pipeline visuel -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="h5 mb-0">
+                <i class="bi bi-diagram-3"></i> Pipeline d’exécution
+            </h3>
+        </div>
+        <div class="card-body">
+            @if (!pipelineTasks.Any())
+            {
+                <span class="text-muted">Aucune tâche définie pour ce crew.</span>
+            }
+            else
+            {
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <!-- Input global -->
+                    <div class="badge rounded-pill bg-secondary">
+                        <i class="bi bi-box-arrow-in-right"></i> user_input
+                    </div>
+
+                    @for (var i = 0; i < pipelineTasks.Count; i++)
+                    {
+                        var ct = pipelineTasks[i];
+
+                        <i class="bi bi-arrow-right text-muted"></i>
+
+                        <div class="badge rounded-pill bg-info text-dark">
+                            <span class="me-1">@ct.sort_order.</span>
+                            @ct.task.name
+                            @if (ct.agent != null)
+                            {
+                                <span class="ms-1">
+                                    (<i class="bi bi-person"></i> @ct.agent.name)
+                                </span>
+                            }
+                        </div>
+                    }
+
+                    <i class="bi bi-arrow-right text-muted"></i>
+
+                    <!-- Output global -->
+                    <div class="badge rounded-pill bg-success">
+                        <i class="bi bi-check2-circle"></i> output
+                    </div>
+                </div>
+
+                <p class="small text-muted mb-0">
+                    Chaque badge représente une tâche exécutée séquentiellement, en partant de
+                    <code>user_input</code> jusqu’à la sortie finale. Les agents responsables sont indiqués entre parenthèses.
+                </p>
+            }
+        </div>
+    </div>
+
+    <!-- Blueprint des tâches -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0">Flux des tâches</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 4%">#</th>
+                            <th style="width: 22%">Tâche</th>
+                            <th style="width: 16%">Agent</th>
+                            <th style="width: 24%">Entrée (input_template)</th>
+                            <th style="width: 26%">Sortie attendue</th>
+                            <th style="width: 8%">Entry</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ct in Model.crew.crew_tasks.OrderBy(t => t.sort_order))
+                        {
+                            var agent = ct.agent;
+                            var agentName = agent?.name ?? "—";
+                            var agentTooltip = agent == null
+                            ? ""
+                            : $"{agent.role}\n{agent.goal}\n\n{agent.backstory}";
+
+                            <tr>
+                                <td class="fw-semibold">
+                                    <i class="bi bi-arrow-down-up"></i> @ct.sort_order
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">
+                                        <i class="bi bi-lightning-charge"></i> @ct.task.name
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        @ct.task.description
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (agent != null)
+                                    {
+                                        <span title="@agentTooltip" data-bs-toggle="tooltip" data-bs-placement="top"
+                                              class="fw-semibold text-primary">
+                                            <i class="bi bi-person-vcard"></i> @agentName
+                                        </span>
+
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(ct.input_template))
+                                    {
+                                        <pre class="bg-light border rounded p-2 mb-0 small"
+                                             style="white-space: pre-wrap;">
+                                        <i class="bi bi-box-arrow-in-right"></i>
+                 @ct.input_template
+                                                            </pre>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    <pre class="bg-light border rounded p-2 mb-0 small"
+                                         style="white-space: pre-wrap;">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+        @ct.task.expected_output
+                                            </pre>
+                                </td>
+                                <td class="text-center">
+                                    @if (ct.is_entry_point)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-rocket"></i> Start
+                                        </span>
+                                    }
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue par agent -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0">Vue par agent</h3>
+        </div>
+        <div class="card-body">
+            @foreach (var agent in Model.crew.crew_agents
+                        .Select(ca => ca.agent)
+                        .GroupBy(a => a.id)
+                        .Select(g => g.First()))
+            {
+                <div class="border-start ps-3 mb-4">
+                    <h4 class="h6 mb-1">@agent.name</h4>
+                    <p class="small mb-2">
+                        <strong>Rôle :</strong> @agent.role<br />
+                        <strong>Goal :</strong> @agent.goal
+                    </p>
+                    @if (!string.IsNullOrWhiteSpace(agent.backstory))
+                    {
+                        <p class="small text-muted mb-2">@agent.backstory</p>
+                    }
+
+                    <ul class="small mb-0">
+                        @foreach (var ct in Model.crew.crew_tasks
+                                            .Where(t => t.agent_id == agent.id)
+                                            .OrderBy(t => t.sort_order))
+                        {
+                            <li>
+                                <strong>@ct.task.name</strong> – @ct.task.description
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Active les tooltips Bootstrap sur les agents
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}

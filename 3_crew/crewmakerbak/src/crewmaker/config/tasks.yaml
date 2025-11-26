@@ -1,0 +1,114 @@
+interpret_request:
+  description: >
+    Analyse détaillée de la demande de création d’un crew de programmation
+    afin d’identifier les objectifs, contraintes et le type de tâches.
+  expected_output: >
+    Spécification claire et formalisée des besoins du nouveau crew
+    (domaines fonctionnels, agents souhaités, types de tâches attendues).
+  agent: request_interpreter
+
+design_crew_architecture:
+  description: >
+    À partir de la spécification produite par 'interpret_request', conçois
+    l'architecture du nouveau crew :
+    - liste des agents (nom interne, rôle, goal, backstory)
+    - liste des tâches (nom, description, expected_output, agent)
+    - ordre d'exécution et dépendances.
+
+    Si nécessaire, inspecte le projet existant dans {target_dir} en utilisant
+    DirectoryReadTool pour t'inspirer de la structure (sans écraser de fichiers).
+  expected_output: >
+    Document d'architecture en texte structuré décrivant clairement les agents,
+    tâches et le flux d'exécution du nouveau crew.
+  agent: crew_architect
+  context: [interpret_request]
+
+generate_yaml_files:
+  description: >
+    En te basant sur :
+    1) l'architecture produite par 'design_crew_architecture'
+    2) la demande initiale {spec}
+
+    Génère le contenu complet des fichiers suivants pour le NOUVEAU crew :
+
+    - agents.yaml
+    - tasks.yaml
+    - crew.py (classe CrewBase, agents, tasks, crew)
+
+    Puis, ÉCRIS physiquement ces fichiers dans le système de fichiers,
+    en utilisant STRICTEMENT l'outil FileWriterTool avec les arguments :
+    - filename: nom du fichier (ex: "agents.yaml")
+    - content: contenu texte complet du fichier
+    - directory: le dossier racine cible {target_dir} ou un sous-dossier,
+      par exemple "{target_dir}/{project_slug}/config" ou "{target_dir}/{project_slug}".
+
+    Contraintes importantes :
+    - Ne JAMAIS écrire en dehors de {target_dir}.
+    - Créer les sous-dossiers nécessaires (FileWriterTool gère la création
+      de répertoires).
+    - Les chemins doivent être cohérents entre crew.py, agents.yaml, tasks.yaml.
+
+  expected_output: >
+    Résumé textuel expliquant quels fichiers ont été créés, dans quels
+    sous-dossiers de {target_dir}, et un rappel des noms des agents et tâches.
+  agent: yaml_generator
+  context: [design_crew_architecture]
+
+validate_crew_configuration:
+  description: >
+    Vérifie la configuration générée en lisant les fichiers écrits dans {target_dir}
+    à l’aide de FileReadTool et/ou DirectoryReadTool.
+
+    Objectifs :
+    - Vérifier la validité YAML de agents.yaml et tasks.yaml.
+    - Vérifier la cohérence des noms (agents et tâches).
+    - Vérifier que crew.py référence correctement les fichiers YAML.
+    - Signaler toute incohérence détectée.
+
+    Si tu détectes des erreurs mineures, tu peux corriger le contenu en réécrivant
+    le fichier via FileWriterTool, toujours sous {target_dir}.
+  expected_output: >
+    Rapport de validation listant les fichiers vérifiés, les problèmes éventuels
+    et les corrections appliquées.
+  agent: quality_validator
+  context: [generate_yaml_files]
+
+create_new_crew:
+  description: >
+    Finalise la configuration du nouveau crew dans {target_dir}.
+
+    Tâches typiques :
+    - S'assurer que l'arborescence est cohérente (par exemple :
+      {target_dir}/{project_slug}/config, tools, knowledge, etc.).
+    - Créer si besoin des fichiers supplémentaires minimaux (ex: __init__.py,
+      main.py squelette, README.md) en utilisant FileWriterTool.
+    - Documenter dans un fichier texte (par ex. INSTALL.md) comment lancer ce crew.
+
+    Tu peux relire le contenu des fichiers existants avec FileReadTool.
+  expected_output: >
+    Liste des fichiers et dossiers finaux créés/modifiés pour le nouveau crew
+    sous {target_dir}, avec un court guide d'utilisation écrit dans un fichier
+    texte (ex: INSTALL.md).
+  agent: crew_creator
+  context: [validate_crew_configuration]
+
+test_created_crew:
+  description: >
+    Teste le nouveau crew créé dans {target_dir}.
+
+    Utilise le CodeInterpreterTool pour :
+    - écrire et exécuter un petit script Python qui importe la classe Crew du
+      nouveau projet et appelle crew.kickoff() sur un exemple minimal.
+    - récupérer la sortie (succès ou erreurs) et la résumer.
+
+    IMPORTANT :
+    - Le code exécuté doit se limiter au test du nouveau crew.
+    - Ne fais aucune opération dangereuse sur le système (pas de suppression de fichiers).
+
+  expected_output: >
+    Rapport de test indiquant :
+    - si l'import de la classe Crew fonctionne,
+    - si l'appel crew.kickoff() fonctionne sans erreur,
+    - les éventuelles stacktraces résumées et suggestions de correction.
+  agent: crew_tester
+  context: [create_new_crew]

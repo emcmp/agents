@@ -1,0 +1,102 @@
+﻿@page
+@model CrewViewer.Pages.Crews.IndexModel
+
+@{
+    ViewData["Title"] = "Crews";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Liste des Crews</h1>
+            <p class="text-muted mb-0">
+                Visualisation des crews définis dans la base SQLite.
+            </p>
+        </div>
+        <span class="badge bg-secondary fs-6">
+            @Model.Crews.Count crew(s)
+        </span>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Nom</th>
+                        <th>Orchestration</th>
+                        <th class="text-center">Actif</th>
+                        <th class="text-center">Agents</th>
+                        <th class="text-center">Tasks</th>
+                        <th class="text-center">Execs</th>
+                        <th class="text-end">Blueprint</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var crew in Model.Crews)
+                    {
+                        <tr>
+                            <td class="fw-semibold">
+                                <i class="bi bi-terminal"></i> @crew.code
+                            </td>
+                            <td>
+                                <i class="bi bi-diagram-3"></i> @crew.name
+                            </td>
+
+                            <td>
+                                <span class="badge bg-info">
+                                    <i class="bi bi-arrow-repeat"></i> @crew.orchestration
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                @if (crew.is_active)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Actif
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-x-circle"></i> Inactif
+                                    </span>
+                                }
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-people"></i> @crew.crew_agents.Count
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-list-check"></i> @crew.crew_tasks.Count
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a asp-page="./ExecutionList"
+                                   asp-route-crewId="@crew.id"
+                                   class="badge bg-dark text-light text-decoration-none"
+                                   style="cursor:pointer;">
+                                    <i class="bi bi-clock-history"></i> @crew.exec_count
+                                </a>
+                            </td>
+
+
+                            <td class="text-end">
+                                <a asp-page="./Details" asp-route-id="@crew.id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-diagram-3"></i> Voir le blueprint
+                                </a>
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

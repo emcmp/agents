@@ -1,0 +1,134 @@
+﻿@page
+@model CrewViewer.Pages.Crews.ExecutionLogModel
+
+@{
+    ViewData["Title"] = "Log d'exécution";
+    var exec = Model.Execution;
+}
+
+@if (exec is null)
+{
+    <div class="alert alert-danger mt-3">
+        Aucune exécution trouvée.
+    </div>
+}
+else
+{
+    <div class="mb-3">
+        <a asp-page="Details" asp-route-id="@exec.crew_id" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Retour au blueprint
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">
+                Log d'exécution #@exec.id – @exec.crew?.name (@exec.crew?.code)
+            </h2>
+            <small>
+                Début : @exec.started_at |
+                Fin : @exec.finished_at |
+                Statut : @exec.status
+            </small>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Onglets -->
+            <ul class="nav nav-tabs mt-2" id="execTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="tab-summary" data-bs-toggle="tab"
+                       href="#pane-summary" role="tab"
+                       aria-controls="pane-summary" aria-selected="true">
+                        📝 Summary
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="tab-md" data-bs-toggle="tab" href="#pane-md" role="tab"
+                       aria-controls="pane-md" aria-selected="false">
+                        📄 Output (.md)
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="tab-stdout" data-bs-toggle="tab" href="#pane-stdout" role="tab"
+                       aria-controls="pane-stdout" aria-selected="false">
+                        💻 StdOut
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="tab-stderr" data-bs-toggle="tab" href="#pane-stderr" role="tab"
+                       aria-controls="pane-stderr" aria-selected="false">
+                        ⚠️ StdErr
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Contenu des onglets -->
+            <div class="tab-content border border-top-0 p-3 bg-dark text-light mt-0" id="execTabsContent"
+                 style="min-height: 300px;">
+
+                <!-- 📝 Summary -->
+                <div class="tab-pane fade show active" id="pane-summary" role="tabpanel" aria-labelledby="tab-summary">
+                    @if (!string.IsNullOrWhiteSpace(Model.SummaryHtml))
+                    {
+                        <div class="markdown-body">
+                            @Html.Raw(Model.SummaryHtml)
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucun summary enregistré pour cette exécution.</p>
+                    }
+                </div>
+
+
+                <!-- 📄 Output (.md) -->
+                <div class="tab-pane fade" id="pane-md" role="tabpanel" aria-labelledby="tab-md">
+                    @if (!string.IsNullOrWhiteSpace(Model.MarkdownHtml))
+                    {
+                        <div class="markdown-body">
+                            @Html.Raw(Model.MarkdownHtml)
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucun fichier .md pour cette exécution, ou fichier introuvable.</p>
+                    }
+                </div>
+
+
+                <!-- 💻 StdOut -->
+                <div class="tab-pane fade" id="pane-stdout" role="tabpanel" aria-labelledby="tab-stdout">
+                    @if (!string.IsNullOrWhiteSpace(exec.stdout))
+                    {
+                        <pre class="bg-dark text-light p-3 small"
+                             style="white-space: pre-wrap; max-height: 600px; overflow:auto;">
+        @exec.stdout
+                                </pre>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucun output (stdout).</p>
+                    }
+                </div>
+
+                <!-- ⚠️ StdErr -->
+                <div class="tab-pane fade" id="pane-stderr" role="tabpanel" aria-labelledby="tab-stderr">
+                    @if (!string.IsNullOrWhiteSpace(exec.stderr))
+                    {
+                        <pre class="bg-dark text-warning p-3 small"
+                             style="white-space: pre-wrap; max-height: 600px; overflow:auto;">
+        @exec.stderr
+                                </pre>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucune erreur (stderr).</p>
+                    }
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+}

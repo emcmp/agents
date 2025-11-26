@@ -1,7 +1,113 @@
-coding_task:
+design_crew:
   description: >
-    Write python code to achieve this: {assignment}
+    À partir du cahier des charges fourni dans {spec}, conçois un nouveau
+    projet CrewAI complet.
+
+    Le résultat doit décrire clairement :
+    - le nom du projet (slug simple, ex: "recipe_assistant_crew")
+    - le but général du crew
+    - la liste des agents (nom interne, rôle, goal, backstory)
+    - la liste des tâches (nom interne, description, expected_output, agent associé)
+    - l'ordre d'exécution et les dépendances principales entre tâches.
+
+    Tu ne génères PAS encore les fichiers YAML finaux ici, seulement un plan
+    textuel structuré.
   expected_output: >
-    A text file that includes the code itself, along with the output of the code.
-  agent: coder
-  output_file: output/code_and_output.txt
+    Un plan détaillé structuré en sections :
+
+    # project
+    - name: <nom_du_projet>
+    - description: <phrase ou paragraphe>
+
+    # agents
+    - <agent_name>:
+        role: ...
+        goal: ...
+        backstory: ...
+
+    # tasks
+    - <task_name>:
+        description: ...
+        expected_output: ...
+        agent: <agent_name>
+        context: [tâches dont il dépend éventuellement]
+
+    Le tout en texte lisible, sans balises de code.
+  agent: crew_designer
+  markdown: true
+
+generate_yaml_files:
+  description: >
+    En te basant sur :
+    1) le plan produit par la tâche 'design_crew'
+    2) le cahier des charges original {spec}
+
+    Génère le contenu complet de deux fichiers YAML pour le NOUVEAU projet
+    que tu as conçu :
+
+    - agents.yaml : définition de tous les agents du nouveau crew
+    - tasks.yaml : définition de toutes les tâches du nouveau crew
+
+    Contraintes importantes :
+    - La syntaxe YAML doit être valide.
+    - Les noms d'agents et de tâches doivent être des identifiants simples
+      (snake_case, sans espace).
+    - Les noms utilisés dans tasks.yaml (champ "agent") doivent exister dans
+      agents.yaml.
+    - N'inclus AUCUN texte superflu autour des blocs de code.
+
+    Tu écris la réponse sous la forme de DEUX blocs de code séparés, dans
+    cet ordre précis :
+
+    1) Un bloc ```yaml contenant EXCLUSIVEMENT le contenu complet du fichier agents.yaml
+    2) Un bloc ```yaml contenant EXCLUSIVEMENT le contenu complet du fichier tasks.yaml
+  expected_output: >
+    Deux blocs de code :
+
+    ```yaml
+    # agents.yaml
+    ...
+    ```
+
+    ```yaml
+    # tasks.yaml
+    ...
+    ```
+
+    Chaque bloc doit pouvoir être copié/collé tel quel dans un fichier.
+  agent: crew_designer
+  markdown: true
+  context:
+    - design_crew
+
+review_yaml_files:
+  description: >
+    Relis et vérifie les deux fichiers YAML générés dans la tâche
+    'generate_yaml_files'.
+
+    Objectifs :
+    - Vérifier la validité de la syntaxe YAML.
+    - Vérifier la cohérence des noms (agents et tâches).
+    - Vérifier que chaque tâche référence un agent existant.
+    - Vérifier que le style est cohérent (indentation, utilisation de ">" etc.).
+
+    Si tout est correct, réécris simplement les deux blocs YAML SANS
+    modification, toujours dans l'ordre :
+    1) agents.yaml
+    2) tasks.yaml
+
+    Si tu trouves des erreurs ou améliorations indispensables, corrige-les
+    et réécris la version corrigée, en gardant la même structure globale.
+
+    Ne rajoute pas de commentaire ou d'explication en dehors des blocs YAML.
+  expected_output: >
+    Deux blocs ```yaml, dans cet ordre :
+
+    1) agents.yaml final
+    2) tasks.yaml final
+
+    Aucun autre texte en dehors des blocs.
+  agent: yaml_reviewer
+  markdown: true
+  context:
+    - generate_yaml_files

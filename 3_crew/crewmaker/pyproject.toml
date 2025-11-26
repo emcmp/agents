@@ -1,0 +1,25 @@
+[project]
+name = "crewmaker"
+version = "0.1.0"
+description = "crewmaker using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai-tools>=1.5.0",
+    "crewai[google-genai,tools]==1.5.0",
+]
+
+[project.scripts]
+crewmaker = "crewmaker.main:run"
+run_crew = "crewmaker.main:run"
+train = "crewmaker.main:train"
+replay = "crewmaker.main:replay"
+test = "crewmaker.main:test"
+run_with_trigger = "crewmaker.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"

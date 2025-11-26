@@ -1,0 +1,238 @@
+interpret_request:
+  description: >
+    Analyse détaillée de la demande de création d’un crew de programmation afin
+    d’identifier les objectifs, les contraintes et le type de tâches.
+    Utilise l’input {spec} comme formulation de la demande initiale.
+  expected_output: >
+    Une spécification structurée des besoins du nouveau crew, par exemple
+    sous forme de texte structuré ou de pseudo-YAML, contenant au minimum :
+      - project_slug (ex: "generated_crews" ou un autre slug pertinent)
+      - high_level_goal
+      - main_features
+      - constraints
+      - exemples de tâches de programmation à réaliser.
+  agent: request_interpreter
+
+design_crew_architecture:
+  description: >
+    À partir de la spécification produite par 'interpret_request' ET de la
+    demande initiale {spec}, conçois l’architecture du nouveau crew enfant :
+      - liste des agents (nom interne, rôle, goal, backstory)
+      - liste des tâches (nom, description, expected_output, agent)
+      - ordre d’exécution et dépendances
+      - éventuel slug de projet (par défaut "generated_crews" puisque le
+        projet cible existe déjà).
+
+    Tu dois rester raisonnablement simple et orienté "tâches de programmation".
+  expected_output: >
+    Un document d’architecture structuré, idéalement en pseudo-YAML, contenant :
+      - project_slug
+      - description
+      - agents: liste d’agents (name, role, goal, backstory)
+      - tasks: liste de tâches (name, description, expected_output, agent_name)
+      - remarques sur le flux d’exécution.
+  agent: crew_architect
+  context: [interpret_request]
+
+choose_llm_and_docker_strategy:
+  description: >
+    En t’appuyant sur l’architecture produite par 'design_crew_architecture'
+    et sur la demande {spec}, conçois une stratégie de modèles LLM et de
+    packaging Docker :
+
+      - Propose quels modèles utiliser pour le crew enfant :
+          * OpenAI (par ex. gpt-4.1-mini, gpt-4o) et/ou
+          * Google Gemini (par ex. gemini-1.5-flash, gemini-2.5-flash-lite).
+      - Indique clairement les variables d’environnement à utiliser pour les clés :
+          * OPENAI_API_KEY
+          * GOOGLE_API_KEY (ou équivalent)
+      - Donne une structure simple de configuration (ex: dans un .env ou
+        via des variables d’environnement) que le Dockerfile pourra utiliser.
+
+    Ne génère pas encore les fichiers, reste au niveau "design" et
+    recommandations concrètes.
+  expected_output: >
+    Une stratégie claire contenant :
+      - les noms des modèles LLM retenus (OpenAI / Gemini),
+      - les variables d’environnement nécessaires,
+      - la manière dont ces choix seront reflétés dans le code Python
+        (référence aux modèles) et dans Docker.
+  agent: llm_strategy_designer
+  context: [design_crew_architecture]
+
+generate_core_files:
+  description: >
+    En te basant sur :
+      1) l’architecture produite par 'design_crew_architecture'
+      2) la stratégie de 'choose_llm_and_docker_strategy'
+      3) la demande initiale {spec}
+      4) le dossier cible {target_dir}
+
+    GÉNÈRE le contenu COMPLET ET FINAL, prêt à être écrit sur disque, des
+    fichiers suivants pour le NOUVEAU crew (projet enfant) :
+
+      - config/agents.yaml
+      - config/tasks.yaml
+      - crew.py
+
+    CONTRAINTES CRITIQUES POUR crew.py (option A) :
+
+      - La classe principale définie dans crew.py doit s’appeler EXACTEMENT
+        "GeneratedCrews".
+      - Tu dois utiliser la nouvelle API CrewAI basée sur décorateur :
+          from crewai import Agent, Task, Crew, Process
+          from crewai.project import CrewBase, agent, task, crew
+
+          @CrewBase
+          class GeneratedCrews:
+              agents_config = "config/agents.yaml"
+              tasks_config = "config/tasks.yaml"
+              ... (méthodes @agent, @task, @crew)
+
+      - N’utilise JAMAIS l’ancienne API :
+          * pas de "from crewbase.crewbase import CrewBase"
+          * pas de "class X(CrewBase) : ..."
+      - Les méthodes @agent et @task de GeneratedCrews doivent correspondre
+        EXACTEMENT aux noms d’agents et de tâches définis dans les YAML
+        que tu génères (agents.yaml, tasks.yaml).
+      - La méthode @crew "def crew(self) -> Crew:" doit assembler tous les
+        agents et tâches générés, avec un Process (séquentiel par défaut).
+
+    CONTRAINTES CRITIQUES POUR les YAML :
+
+      - config/agents.yaml :
+          * les clés de premier niveau sont les noms internes des agents,
+            par exemple "dev_agent", "review_agent", etc.
+          * chaque agent a au moins : role, goal, backstory.
+      - config/tasks.yaml :
+          * les clés de premier niveau sont les noms des tâches,
+            par exemple "plan_feature", "write_code", "review_code".
+          * chaque tâche a au moins : description, expected_output, agent.
+          * le champ "agent" doit être un des noms définis dans agents.yaml.
+
+    EMPLACEMENT ET ÉCRITURE DES FICHIERS AVEC FileWriterTool :
+
+      - Pour les YAML :
+          directory = "{target_dir}/config"
+          filename  = "agents.yaml" ou "tasks.yaml"
+          content   = contenu texte complet du fichier.
+
+      - Pour crew.py :
+          directory = "{target_dir}"
+          filename  = "crew.py"
+          content   = contenu texte complet du fichier Python.
+
+    Tu n’exécutes pas de code ici, tu te contentes de générer et écrire les
+    fichiers via l’outil d’écriture.
+
+  expected_output: >
+    Un court résumé indiquant :
+      - quels fichiers ont été générés (chemins complets),
+      - combien d’agents et de tâches ont été définis,
+      - le nom exact de la classe principale (qui doit être "GeneratedCrews").
+  agent: yaml_generator
+  context:
+    - design_crew_architecture
+    - choose_llm_and_docker_strategy
+
+generate_docker_support:
+  description: >
+    À partir de la stratégie définie dans 'choose_llm_and_docker_strategy'
+    et des fichiers générés par 'generate_core_files', génère le support
+    Docker du projet enfant :
+
+      - un fichier Dockerfile minimal mais fonctionnel pour exécuter le crew
+        généré (avec uv/poetry/pip selon le contexte le plus simple, par
+        exemple uv + python).
+      - un fichier HOW_TO_RUN.md qui explique clairement :
+          * comment construire l’image Docker (ex: docker build -t my-crew .)
+          * comment lancer le conteneur
+          * quelles variables d’environnement (OPENAI_API_KEY, GOOGLE_API_KEY,
+            etc.) doivent être fournies et comment.
+
+    Utilise FileWriterTool pour créer ces fichiers dans {target_dir} :
+      - "{target_dir}/Dockerfile"
+      - "{target_dir}/HOW_TO_RUN.md"
+  expected_output: >
+    Un résumé textuel du contenu principal du Dockerfile et des étapes
+    expliquées dans HOW_TO_RUN.md.
+  agent: docker_packager
+  context:
+    - choose_llm_and_docker_strategy
+    - generate_core_files
+
+validate_crew_configuration:
+  description: >
+    Vérifie la cohérence des fichiers générés dans {target_dir} :
+
+      - s’assurer que les fichiers suivants existent :
+          * {target_dir}/config/agents.yaml
+          * {target_dir}/config/tasks.yaml
+          * {target_dir}/crew.py
+      - lire le contenu si nécessaire pour vérifier que :
+          * les noms d’agents dans tasks.yaml correspondent à des entrées
+            de agents.yaml
+          * la classe "GeneratedCrews" est bien définie dans crew.py
+          * les imports de crew.py utilisent la nouvelle API :
+              from crewai.project import CrewBase, agent, task, crew
+            et NON l’ancienne.
+      - vérifier que la structure est compatible avec un projet appelé
+        "generated_crews", c’est-à-dire que :
+            from generated_crews.crew import GeneratedCrews
+        a du sens si le projet enfant s’appelle ainsi.
+
+    Cette tâche est de validation logique : elle ne doit PAS réécrire les
+    fichiers, seulement produire un rapport.
+  expected_output: >
+    Un rapport de validation clair :
+      - "OK" si tout est cohérent pour un import
+        'from generated_crews.crew import GeneratedCrews'
+      - sinon, une liste précise des problèmes détectés (fichiers manquants,
+        noms non cohérents, mauvaise API CrewAI, etc.).
+  agent: quality_validator
+  context:
+    - generate_core_files
+    - generate_docker_support
+
+create_new_crew:
+  description: >
+    Finalise le projet enfant dans {target_dir} :
+
+      - éventuellement créer ou compléter un README.md décrivant brièvement
+        le but du crew généré et la stack (OpenAI / Gemini / Docker).
+      - ajouter un __init__.py vide dans {target_dir} ou dans les sous-dossiers
+        si nécessaire pour que le package Python soit proprement importable.
+
+    IMPORTANT :
+      - Ne modifie PAS le main.py du projet parent.
+      - Ne modifie PAS d’autres fichiers en dehors du dossier {target_dir}
+        et de son sous-dossier "config".
+  expected_output: >
+    Un inventaire final des fichiers présents dans {target_dir}, avec une
+    courte explication de ce qui a été ajouté ou ajusté lors de cette étape.
+  agent: crew_creator
+  context:
+    - validate_crew_configuration
+
+test_created_crew:
+  description: >
+    Rédige un guide textuel en français expliquant comment tester le nouveau
+    crew généré, en supposant que le projet enfant s’appelle "generated_crews" :
+
+      - exemple de test via la CLI CrewAI depuis le projet enfant :
+          uv run crewai run
+      - exemple de test via un module Python :
+          uv run python -m generated_crews.main
+        (si un main.py adapté existe dans le projet enfant).
+
+    Donne des étapes claires, séquentielles, pour qu’un humain puisse
+    valider rapidement que le crew enfant s’exécute sans erreur.
+    Tu n’exécutes PAS ces commandes, tu produis seulement la documentation.
+  expected_output: >
+    Un guide de test étape par étape, incluant :
+      - les commandes à exécuter,
+      - les prérequis (clé OpenAI / Gemini, variables d’environnement),
+      - ce qu’un utilisateur devrait voir en cas de succès.
+  agent: crew_tester
+  context:
+    - create_new_crew
