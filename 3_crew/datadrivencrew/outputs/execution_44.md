@@ -1,0 +1,1 @@
+Lit le user_input et retourne une réponse courte.
